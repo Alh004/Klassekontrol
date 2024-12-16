@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classrooms</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div id="app">
+        <h1>Classrooms</h1>
+
+        <div v-if="weather">
+          <h2>Current Weather in Copenhagen</h2>
+          <p><strong>Temperature:</strong> {{ weather.main?.temp }} °C</p>
+          <p><strong>Description:</strong> {{ weather.weather?.[0]?.description }}</p>
+          <p><strong>Humidity:</strong> {{ weather.main?.humidity }}%</p>
+      </div>
+      <div v-else-if="error" class="error">{{ error }}</div>
+      <div v-else>Loading weather...</div>
+      
+      <button @click="fetchWeather">Refresh Weather</button>
+      <button @click="toggleWeather">{{ showWeather ? 'Hide Weather' : 'Show Weather' }}</button>
+        
+        <!-- Knap til at hente og vise klasselokaler -->
+        <button @click="toggleClassrooms">{{ showClassrooms ? 'Hide Classes' : 'Find Classes' }}</button>
+        
+        <!-- Formular til at tilføje et nyt klasselokale -->
+        <div v-if="showClassrooms">
+            <h2>Add New Classroom</h2>
+            <form @submit.prevent="addClassroom">
+                <label for="teacherName">Teacher Name:</label>
+                <input type="text" v-model="newClassroom.teacherName" id="teacherName" required>
+                
+                <label for="studentCount">Student Count:</label>
+                <input type="number" v-model="newClassroom.studentCount" id="studentCount" required>
+                
+                <label for="sessionActive">Session Active:</label>
+                <input type="checkbox" v-model="newClassroom.sessionActive" id="sessionActive">
+                
+                <button type="submit">Add Classroom</button>
+            </form>
+        </div>
+
+        <!-- Søgefelt og knap til at nulstille søgning -->
+        <div v-if="showClassrooms">
+            <input v-model="searchQuery" @input="filterClassrooms" placeholder="Search by Class ID">
+            <button @click="resetSearch">Reset Search</button>
+        </div>
+
+        <!-- Fejlmeddelelse -->
+        <div v-if="error" class="error">{{ error }}</div>
+        
+        <!-- Liste over klasselokaler, vises kun hvis showClassrooms er true -->
+        <ul v-if="showClassrooms && filteredClassrooms.length">
+            <li v-for="classroom in filteredClassrooms" :key="classroom.classID">
+                <div class="classroom-info">
+                    <p><strong>Class ID:</strong> {{ classroom.classID }}</p>
+                    <p><strong>Teacher:</strong> {{ classroom.teacherName }}</p>
+                    <p><strong>Students:</strong> {{ classroom.studentCount }}</p>
+                    <p><strong>Session Active:</strong> {{ classroom.sessionActive ? 'Yes' : 'No' }}</p>
+                </div>
+                <div class="classroom-actions">
+                    <button @click="editClassroom(classroom.classID)">Edit</button>
+                    <button @click="deleteClassroom(classroom.classID)">Delete</button>
+                </div>
+            </li>
+        </ul>
+        
+        <!-- Besked hvis der ingen klasselokaler er -->
+        <div v-else-if="showClassrooms && filteredClassrooms.length === 0">No classrooms available.</div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.41"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

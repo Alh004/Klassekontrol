@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klassekontrol</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        header {
+            background-color: #4caf50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .nav-button {
+            padding: 15px 25px;
+            margin: 10px;
+            font-size: 16px;
+            color: white;
+            background-color: #4caf50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-button:hover {
+            background-color: #45a049;
+        }
+
+        .measurement-info {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #444;
+        }
+
+        .sound-image {
+            margin-top: 20px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        .temperature-info {
+            margin-top: 10px;
+            font-size: 18px;
+            color: #444;
+        }
+
+        .charts-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart {
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        footer {
+            background-color: #4caf50;
+            color: white;
+            text-align: center;
+            padding: 5px 0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const formattedTime = now.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('current-time').textContent = formattedTime;
+        }
+
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        let measurementInterval;
+
+        function startMeasurement() {
+            const measurementInfo = document.getElementById('measurement-info');
+            const soundImage = document.getElementById('sound-image');
+            const temperatureInfo = document.getElementById('temperature-info');
+
+            measurementInfo.textContent = 'Måling er startet...';
+
+            measurementInterval = setInterval(() => {
+                updateSoundLevel(soundImage, measurementInfo);
+                updateTemperature(temperatureInfo);
+            }, 5000);
+
+            setTimeout(() => {
+                stopMeasurement();
+                measurementInfo.textContent = 'Måling afsluttet efter 5 minutter. Start en ny måling.';
+            }, 300000);
+        }
+
+        function stopMeasurement() {
+            clearInterval(measurementInterval);
+            const measurementInfo = document.getElementById('measurement-info');
+            const soundImage = document.getElementById('sound-image');
+            const temperatureInfo = document.getElementById('temperature-info');
+
+            measurementInfo.textContent = 'Måling stoppet.';
+            soundImage.src = "";
+            temperatureInfo.textContent = '';
+        }
+
+        function updateSoundLevel(imageElement, infoElement) {
+            const levels = ["low", "medium", "high"];
+            const currentSoundLevel = levels[Math.floor(Math.random() * levels.length)];
+
+            if (currentSoundLevel === "low") {
+                imageElement.src = "https://www.shutterstock.com/image-photo/smiling-young-african-man-covid-600nw-2324833043.jpg";
+                infoElement.textContent = "Støjniveau: Lavt (Roligt miljø, under 55 dB).";
+            } else if (currentSoundLevel === "medium") {
+                imageElement.src = "https://deafunity.org/wp-content/uploads/2019/08/loud-600x400.jpg";
+                infoElement.textContent = "Støjniveau: Acceptabelt (Moderat støj, mellem 55-70 dB).";
+            } else {
+                imageElement.src = "https://st2.depositphotos.com/1053646/5755/i/450/depositphotos_57551863-stock-photo-rock-concert.jpg";
+                infoElement.textContent = "Støjniveau: Højt (For højt støjniveau! Over 70 dB).";
+            }
+
+            imageElement.alt = `Current sound level: ${currentSoundLevel}`;
+        }
+
+        function updateTemperature(infoElement) {
+            const temperature = (Math.random() * 10 + 20).toFixed(1);
+            infoElement.textContent = `Temperatur: ${temperature}°C`;
+        }
+
+        // Initialize charts
+        let temperatureChart, soundChart;
+
+        window.onload = function () {
+            const tempCtx = document.getElementById("temperatureChart").getContext("2d");
+            const soundCtx = document.getElementById("soundChart").getContext("2d");
+
+            temperatureChart = new Chart(tempCtx, {
+                type: "line",
+                data: {
+                    datasets: [
+                        {
+                            label: "Temperature (°C)",
+                            data: [],
+                            borderColor: "red",
+                            borderWidth: 2,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: "linear",
+                            title: {
+                                display: true,
+                                text: "Time",
+                            },
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Temperature (°C)",
+                            },
+                        },
+                    },
+                },
+            });
+
+            soundChart = new Chart(soundCtx, {
+                type: "line",
+                data: {
+                    datasets: [
+                        {
+                            label: "Sound (dB)",
+                            data: [],
+                            borderColor: "blue",
+                            borderWidth: 2,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: "linear",
+                            title: {
+                                display: true,
+                                text: "Time",
+                            },
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: "Sound (dB)",
+                            },
+                        },
+                    },
+                },
+            });
+        };
+    </script>
+</head>
+
+<body>
+    <header>
+        <h1>Klassekontrol - 4.B (Antal elever: 25) | Tid: <span id="current-time"></span></h1>
+    </header>
+
+    <div class="container">
+        <p>Overvåg det aktuelle støjniveau og temperatur i klassen. Start og stop måling efter behov.</p>
+
+        <button class="nav-button" onclick="startMeasurement()">Start Måling</button>
+        <button class="nav-button" onclick="stopMeasurement()">Stop Måling</button>
+        <a href="index.html" class="nav-button" style="background-color: red;">Liste</a>
+
+        <div id="measurement-info" class="measurement-info">Ingen måling aktiv.</div>
+        <img id="sound-image" class="sound-image" src="" alt="Sound level will appear here">
+        <div id="temperature-info" class="temperature-info"></div>
+    </div>
+
+
+
+    <footer>
+        <p>&copy; 2024 Klassekontrol. Alle rettigheder forbeholdes.</p>
+    </footer>
+</body>
+
+</html>

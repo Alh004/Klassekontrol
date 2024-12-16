@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sensor Data Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      position: relative;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    table th,
+    table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    table th {
+      background-color: #f4f4f4;
+    }
+
+    .error {
+      color: red;
+      text-align: center;
+    }
+
+    .filter-container {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .filter-container input,
+    .filter-container select,
+    .filter-container button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+
+    .filter-container button:hover {
+      background-color: #0056b3;
+    }
+
+    .back-button {
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .back-button button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      margin: 5px;
+    }
+
+    .back-button button:hover {
+      background-color: #0056b3;
+    }
+
+    .temperature {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #f4f4f4;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .temperature span {
+      color: #007BFF;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>Sensor Data</h1>
+
+    <!-- Back and Klasse Buttons -->
+    <div class="back-button">
+      <button @click="goBack">Tilbage</button>
+      <button @click="goToKlasse">Klasse</button>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="filter-container">
+      <label for="timeRange">Tid:</label>
+      <select id="timeRange" v-model="selectedTimeRange">
+        <option value="">Alle</option>
+        <option value="09-10">09-10</option>
+        <option value="10-11">10-11</option>
+        <option value="11-12">11-12</option>
+      </select>
+
+      <button @click="filterHighest">Højeste Måling</button>
+      <button @click="filterLowest">Laveste Måling</button>
+    </div>
+
+    <!-- Sensor Table -->
+    <table v-if="filteredSensors.length">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Type</th>
+          <th>Value</th>
+          <th>Last Measurement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="sensor in filteredSensors" :key="sensor.id">
+          <td>{{ sensor.id }}</td>
+          <td>{{ sensor.sensorType }}</td>
+          <td>{{ sensor.currentValue }}</td>
+          <td>{{ new Date(sensor.lastMeasurement).toLocaleString() }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- No Data Message -->
+    <p v-else>No sensor data available.</p>
+
+    <!-- Temperature Display -->
+    <div class="temperature" v-if="temperature !== null">
+      Udendørs Temperatur: <span>{{ temperature }}°C</span>
+    </div>
+    <div class="temperature" v-else>
+      Henter temperatur...
+    </div>
+  </div>
+
+  <script>
+    const app = Vue.createApp({
+      data() {
+        return {
+          sensors: [], // Sensor data from the API
+          filteredSensors: [], // Filtered data
+          selectedTimeRange: '', // Selected time range
+          temperature: null, // Temperature data
+          apiKey: '494e21ac3cf356b59cb7ee15555454aa', // New API key
+          location: 'Copenhagen', // Default location
+          error: null, // Error message
+        };
+      },
+      computed: {
+        timeFilteredSensors() {
+          if (!this.selectedTimeRange) {
+            return this.sensors;
+          }
+
+          const [start, end] = this.selectedTimeRange.split('-').map(Number);
+          return this.sensors.filter(sensor => {
+            const hour = new Date(sensor.lastMeasurement).getHours();
+            return hour >= start && hour < end;
+          });
+        },
+      },
+      methods: {
+        async fetchSensors() {
+          try {
+            const response = await axios.get('http://localhost:5131/api/sensors'); // Ensure backend is running
+            this.sensors = response.data; // Store the data in the sensors array
+            this.filteredSensors = this.sensors; // Initialize filteredSensors
+          } catch (error) {
+            this.error = "Failed to fetch sensor data.";
+            console.error(error);
+          }
+        },
+        goBack() {
+          // Navigate to forside.html
+          window.location.href = 'forside.html';
+        },
+        goToKlasse() {
+          // Navigate to klasse.html
+          window.location.href = 'klasse.html';
+        },
+        filterHighest() {
+          // Find the highest value from time-filtered sensors
+          const sensors = this.timeFilteredSensors;
+          const maxValue = Math.max(...sensors.map(sensor => sensor.currentValue));
+          this.filteredSensors = sensors.filter(sensor => sensor.currentValue === maxValue);
+        },
+        filterLowest() {
+          // Find the lowest value from time-filtered sensors
+          const sensors = this.timeFilteredSensors;
+          const minValue = Math.min(...sensors.map(sensor => sensor.currentValue));
+          this.filteredSensors = sensors.filter(sensor => sensor.currentValue === minValue);
+        },
+        async fetchTemperature() {
+          try {
+            const response = await axios.get(
+              `https://api.openweathermap.org/data/2.5/weather?q=${this.location}&units=metric&appid=${this.apiKey}`
+            );
+            this.temperature = response.data.main.temp; // Extract temperature data
+          } catch (error) {
+            console.error('Failed to fetch temperature:', error);
+            this.temperature = null;
+          }
+        },
+      },
+      watch: {
+        selectedTimeRange() {
+          // Update filteredSensors when the selected time range changes
+          this.filteredSensors = this.timeFilteredSensors;
+        },
+      },
+      created() {
+        this.fetchSensors(); // Fetch data when the component is created
+        this.fetchTemperature(); // Fetch temperature data on page load
+      },
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>
